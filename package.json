@@ -1,0 +1,75 @@
+{
+  "name": "ui-llm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local Windows-only Electron app for multi-provider LLM chat, RAG and image generation.",
+  "main": "electron/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "dev:renderer": "vite",
+    "dev:electron": "wait-on tcp:5173 && electron .",
+    "build": "vite build",
+    "preview": "vite preview",
+    "pack:win": "npm run build && electron-builder --win nsis",
+    "pack:dir": "npm run build && electron-builder --dir",
+    "pack:portable": "npm run build && electron-packager . UI-LLM --platform=win32 --arch=x64 --out=release --overwrite --ignore=src --ignore=node_modules/.cache --ignore=release",
+    "pack:win:stable": "powershell -ExecutionPolicy Bypass -File .\\scripts\\pack-win-stable.ps1"
+  },
+  "dependencies": {
+    "electron-log": "^5.4.3",
+    "image-size": "^2.0.2",
+    "keytar": "^7.9.0",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.1",
+    "@types/react": "^19.1.16",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.4",
+    "concurrently": "^9.2.1",
+    "electron": "^38.3.0",
+    "electron-builder": "^26.0.12",
+    "electron-packager": "^17.1.2",
+    "rollup": "^4.52.5",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10",
+    "wait-on": "^8.0.5"
+  },
+  "build": {
+    "appId": "com.uillm.app",
+    "productName": "UI-LLM",
+    "npmRebuild": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/keytar/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
