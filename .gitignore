@@ -6,8 +6,9 @@ dist-electron
 *.db
 *.db-wal
 *.db-shm
+release/
 release-installer/
-release-portable9/
-release-prep10/
-release-setup10-installer/
-
+.env
+.env.*
+credentials.local.json
+.claude/

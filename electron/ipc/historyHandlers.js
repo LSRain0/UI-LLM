@@ -107,7 +107,19 @@ function registerHistoryHandlers(ipcMain, mainWindow) {
     if (!filePath) {
       return { ok: false, error: "缺少路径" };
     }
-    const errorText = await shell.openPath(filePath);
+    const resolved = path.resolve(filePath);
+    const userData = app.getPath("userData");
+    const docs = app.getPath("documents");
+    const allowedRoots = [
+      path.join(userData, "rag-snapshots"),
+      path.join(docs, "UI-LLM Exports"),
+      path.join(userData, "logs")
+    ];
+    const isAllowed = allowedRoots.some((root) => resolved.startsWith(root + path.sep) || resolved === root);
+    if (!isAllowed) {
+      return { ok: false, error: "不允许打开该路径" };
+    }
+    const errorText = await shell.openPath(resolved);
     if (!errorText) {
       return { ok: true, error: "" };
     }

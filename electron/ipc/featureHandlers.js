@@ -165,6 +165,9 @@ function registerFeatureHandlers(ipcMain, defaultUserDataPath) {
         throw new Error("聊天请求缺少 providerId 或 modelId");
       }
       const provider = findProvider(payload.providerId);
+      if (!provider) {
+        throw new Error(`未找到供应商（ID: ${payload.providerId}），可能已被删除`);
+      }
       const conversationId = payload.conversationId || crypto.randomUUID();
       const userMessage = payload.prompt || "";
       const contextLimit = Math.max(0, Number(payload.contextLength || 12));
@@ -239,6 +242,9 @@ function registerFeatureHandlers(ipcMain, defaultUserDataPath) {
       throw new Error("聊天请求缺少 providerId 或 modelId");
     }
     const provider = findProvider(payload.providerId);
+    if (!provider) {
+      throw new Error(`未找到供应商（ID: ${payload.providerId}），可能已被删除`);
+    }
     const conversationId = payload.conversationId || crypto.randomUUID();
     const streamId = crypto.randomUUID();
     const userMessage = payload.prompt || "";
@@ -400,6 +406,9 @@ function registerFeatureHandlers(ipcMain, defaultUserDataPath) {
         throw new Error("生图请求缺少 providerId 或 modelId");
       }
       const provider = findProvider(payload.providerId);
+      if (!provider) {
+        throw new Error(`未找到供应商（ID: ${payload.providerId}），可能已被删除`);
+      }
       if (payload.imagePath) {
         await assertImageConstraints(payload.imagePath, MAX_IMAGE_BYTES, MAX_IMAGE_EDGE);
       }
@@ -436,6 +445,9 @@ function registerFeatureHandlers(ipcMain, defaultUserDataPath) {
       }
       assertRagUpload(payload.files);
       const provider = findProvider(payload.providerId);
+      if (!provider) {
+        throw new Error(`未找到供应商（ID: ${payload.providerId}），可能已被删除`);
+      }
       let accepted = 0;
       const userDataPath = payload.userDataPath || defaultUserDataPath;
       for (const file of payload.files) {
@@ -505,6 +517,9 @@ function registerFeatureHandlers(ipcMain, defaultUserDataPath) {
         throw new Error("RAG 检索缺少 providerId 或 embeddingModelId");
       }
       const provider = findProvider(payload.providerId);
+      if (!provider) {
+        throw new Error(`未找到供应商（ID: ${payload.providerId}），可能已被删除`);
+      }
       const emb = await withRetry(() =>
         createEmbedding(provider, {
           modelId: payload.embeddingModelId,

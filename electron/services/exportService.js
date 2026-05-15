@@ -58,11 +58,31 @@ function buildMarkdown(data) {
   return lines.join("\n");
 }
 
+async function loadCjkFont(pdfDoc) {
+  const candidates = [
+    "C:/Windows/Fonts/msyh.ttc",
+    "C:/Windows/Fonts/msyhbd.ttc",
+    "C:/Windows/Fonts/simhei.ttf",
+    "C:/Windows/Fonts/simsun.ttc"
+  ];
+  for (const fontPath of candidates) {
+    try {
+      if (fs.existsSync(fontPath)) {
+        const fontBytes = fs.readFileSync(fontPath);
+        return await pdfDoc.embedFont(fontBytes, { subset: true });
+      }
+    } catch {
+      // try next font
+    }
+  }
+  return null;
+}
+
 async function buildPdf(data) {
   const stats = buildStats(data.messages);
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595, 842]);
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const font = (await loadCjkFont(pdfDoc)) || await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontSize = 11;
   const lineHeight = 16;
   const maxWidth = 540;

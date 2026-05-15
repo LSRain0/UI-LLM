@@ -29,6 +29,8 @@ function registerConfigHandlers(ipcMain) {
 
     if (provider.apiKey) {
       await setApiKey(refId, provider.apiKey);
+    } else if (provider.apiKey === "" && provider.credentialRefId) {
+      await deleteApiKey(provider.credentialRefId);
     }
     upsertProvider(next);
     return toSafeProvider(next);

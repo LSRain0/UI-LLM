@@ -24,7 +24,8 @@ const {
   deleteConversationsByIds,
   insertRagDocument,
   insertRagChunkWithVector,
-  listRagVectors
+  listRagVectors,
+  closeDatabase
 } = require("./db");
 
 function initStore(userDataPath) {
@@ -166,5 +167,6 @@ module.exports = {
   renameConversation,
   renameConversations,
   deleteConversation,
-  deleteConversations
+  deleteConversations,
+  closeDatabase
 };

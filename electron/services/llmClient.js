@@ -214,7 +214,7 @@ async function assertImageConstraints(imagePath, maxBytes, maxEdge) {
     throw new Error("参考图超过 10MB 限制");
   }
   const dim = await imageSizeFromFile(imagePath);
-  if (!dim.width || !dim.height) {
+  if (!dim || !dim.width || !dim.height) {
     throw new Error("无法识别图片尺寸");
   }
   if (dim.width > maxEdge || dim.height > maxEdge) {

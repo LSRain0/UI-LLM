@@ -25,7 +25,7 @@ function listLogs(logDir) {
     .sort((a, b) => a.mtimeMs - b.mtimeMs);
 }
 
-function cleanupLogs(logDir) {
+async function cleanupLogs(logDir) {
   ensureDir(logDir);
   const now = Date.now();
   const expireMs = MAX_DAYS * 24 * 60 * 60 * 1000;
@@ -33,7 +33,7 @@ function cleanupLogs(logDir) {
 
   for (const log of logs) {
     if (now - log.mtimeMs > expireMs) {
-      fs.unlinkSync(log.filePath);
+      try { await fs.promises.unlink(log.filePath); } catch {}
     }
   }
 
@@ -41,7 +41,7 @@ function cleanupLogs(logDir) {
   let total = logs.reduce((sum, item) => sum + item.size, 0);
   let idx = 0;
   while (total > MAX_BYTES && idx < logs.length) {
-    fs.unlinkSync(logs[idx].filePath);
+    try { await fs.promises.unlink(logs[idx].filePath); } catch {}
     total -= logs[idx].size;
     idx += 1;
   }

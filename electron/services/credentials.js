@@ -9,6 +9,7 @@ try {
   keytar = require("keytar");
 } catch (_err) {
   keytar = null;
+  console.warn("[credentials] keytar 不可用，API Key 将以明文存储在本地文件中，安全性较低。建议安装 Visual Studio Build Tools 以启用 keytar。");
 }
 
 const SERVICE = "ui-llm";

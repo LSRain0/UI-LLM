@@ -365,8 +365,9 @@ function listConversations(options = {}) {
     params.push(modelId);
   }
   if (keyword) {
-    where.push("(c.title LIKE ? OR m.content LIKE ?)");
-    params.push(`%${keyword}%`, `%${keyword}%`);
+    const escaped = keyword.replace(/[%_]/g, (ch) => `\\${ch}`);
+    where.push("(c.title LIKE ? ESCAPE '\\' OR EXISTS (SELECT 1 FROM messages WHERE conversation_id = c.id AND content LIKE ? ESCAPE '\\'))");
+    params.push(`%${escaped}%`, `%${escaped}%`);
   }
   const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
   const sortMap = {
@@ -385,11 +386,9 @@ function listConversations(options = {}) {
         c.title AS title,
         c.created_at AS created_at,
         c.updated_at AS updated_at,
-        COUNT(m.id) AS message_count
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id) AS message_count
       FROM conversations c
-      LEFT JOIN messages m ON m.conversation_id = c.id
       ${whereSql}
-      GROUP BY c.id
       ORDER BY ${orderBySql}`
     )
     .all(...params)
@@ -516,6 +515,16 @@ function insertRagChunkWithVector(item) {
   }
 }
 
+function closeDatabase() {
+  if (db) {
+    try {
+      db.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+      db.close();
+    } catch {}
+    db = null;
+  }
+}
+
 function listRagVectors() {
   return db
     .prepare(
@@ -566,5 +575,6 @@ module.exports = {
   deleteConversationsByIds,
   insertRagDocument,
   insertRagChunkWithVector,
-  listRagVectors
+  listRagVectors,
+  closeDatabase
 };

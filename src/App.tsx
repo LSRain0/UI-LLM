@@ -64,6 +64,9 @@ function formatRelativeTime(input: string, locale: Locale) {
     return locale === "zh" ? "未知时间" : "Unknown time";
   }
   const diff = Date.now() - ts;
+  if (diff < 0) {
+    return locale === "zh" ? "刚刚" : "just now";
+  }
   const sec = Math.max(1, Math.floor(diff / 1000));
   if (sec < 60) {
     return locale === "zh" ? `${sec} 秒前` : `${sec}s ago`;
@@ -124,6 +127,7 @@ export default function App() {
   const chatInputRef = useRef<HTMLTextAreaElement | null>(null);
   const chatAtBottomRef = useRef(true);
   const scrollRafRef = useRef<number | null>(null);
+  const refreshHistoryRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const [chatHasUnread, setChatHasUnread] = useState(false);
   const [temperature, setTemperature] = useState(1);
   const [maxTokens, setMaxTokens] = useState(1024);
@@ -281,7 +285,7 @@ export default function App() {
 
   useEffect(() => {
     resizeChatInput();
-  }, [chatPrompt]);
+  }, []);
 
   useEffect(() => {
     if (activeTab !== "chat") {
@@ -347,7 +351,7 @@ export default function App() {
         const msgs = await window.api.getHistoryMessages(payload.conversationId);
         setHistoryMessages(msgs);
         setChatMessages(toChatViewMessages(msgs));
-        await refreshHistory();
+        await refreshHistoryRef.current();
         const usage = payload.usage as any;
         const usageText =
           usage && typeof usage === "object"
@@ -388,7 +392,7 @@ export default function App() {
         const msgs = await window.api.getHistoryMessages(conversationId);
         setHistoryMessages(msgs);
         setChatMessages(toChatViewMessages(msgs));
-        await refreshHistory();
+        await refreshHistoryRef.current();
         scheduleScrollChatToBottom();
       })();
     });
@@ -444,6 +448,10 @@ export default function App() {
     setHistoryItems(rows);
     setSelectedHistoryIds((prev) => prev.filter((id) => rows.some((item) => item.id === id)));
   }
+
+  useEffect(() => {
+    refreshHistoryRef.current = refreshHistory;
+  });
 
   function parseModelLines(lines: string) {
     return lines
@@ -592,22 +600,30 @@ export default function App() {
     resizeChatInput();
     scheduleScrollChatToBottom(true);
 
-    const start = await window.api.startChatStream({
-      providerId: selectedProviderId,
-      modelId: selectedModelId,
-      conversationId: currentConversationId || undefined,
-      prompt: userText,
-      systemPrompt,
-      temperature,
-      maxTokens,
-      contextLength,
-      useRag: useRagInChat,
-      ragEmbeddingModelId: selectedModelId,
-      ragTopK,
-      ragInjectMode,
-      ragAutoPromptThreshold,
-      ragAutoTopKThreshold
-    });
+    let start: { streamId: string; conversationId: string };
+    try {
+      start = await window.api.startChatStream({
+        providerId: selectedProviderId,
+        modelId: selectedModelId,
+        conversationId: currentConversationId || undefined,
+        prompt: userText,
+        systemPrompt,
+        temperature,
+        maxTokens,
+        contextLength,
+        useRag: useRagInChat,
+        ragEmbeddingModelId: selectedModelId,
+        ragTopK,
+        ragInjectMode,
+        ragAutoPromptThreshold,
+        ragAutoTopKThreshold
+      });
+    } catch (err) {
+      pendingAssistantIdRef.current = "";
+      setChatMessages((prev) => prev.filter((m) => m.id !== localUser.id && m.id !== localAssistant.id));
+      setLog(`${isZh ? "发起聊天失败" : "Failed to start chat"}：${String(err?.message || err)}`);
+      return;
+    }
     setCurrentConversationId(start.conversationId);
     setChatStreaming(true);
     setChatStreamId(start.streamId);

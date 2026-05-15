@@ -4,7 +4,7 @@ const { registerConfigHandlers } = require("./ipc/configHandlers");
 const { registerFeatureHandlers } = require("./ipc/featureHandlers");
 const { registerSystemHandlers } = require("./ipc/systemHandlers");
 const { registerHistoryHandlers } = require("./ipc/historyHandlers");
-const { initStore } = require("./services/store");
+const { initStore, closeDatabase } = require("./services/store");
 const { cleanupLogs } = require("./services/logManager");
 
 const isDev = !app.isPackaged;
@@ -35,7 +35,7 @@ app.whenReady().then(() => {
   try {
     const userDataPath = app.getPath("userData");
     initStore(userDataPath);
-    cleanupLogs(path.join(userDataPath, "logs"));
+    cleanupLogs(path.join(userDataPath, "logs")).catch(() => {});
     registerConfigHandlers(ipcMain);
     registerFeatureHandlers(ipcMain, userDataPath);
     const win = createWindow();
@@ -51,4 +51,8 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("will-quit", () => {
+  closeDatabase();
 });
